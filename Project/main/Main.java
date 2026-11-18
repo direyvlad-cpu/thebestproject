@@ -32,7 +32,7 @@ public class Main {
                 }
                 case "4" -> writer.append(students);
                 case "5" -> {
-                    System.out.print("Введите номер зачётки для поиска: ");
+                    System.out.print("Введите номер группы для подсчёта кол-ва студентов: ");
                     long target = DataValidator.validateGradeBookNumber(SCANNER.nextLine());
                     counter.count(students,
                             new Student.Builder().gradeBookNumber(target)

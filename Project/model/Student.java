@@ -1,6 +1,7 @@
 package model;
 
-public class Student {
+
+public class Student implements Comparable<Student> {
 
     private final int groupNumber;
     private final double averageGrade;
@@ -10,6 +11,11 @@ public class Student {
         this.groupNumber = builder.groupNumber;
         this.averageGrade = builder.averageGrade;
         this.gradeBookNumber = builder.gradeBookNumber;
+    }
+
+
+    public static Builder builder() {
+        return new Builder();
     }
 
     public int getGroupNumber() {
@@ -45,6 +51,9 @@ public class Student {
         private double averageGrade = -1;
         private long gradeBookNumber = -1;
 
+        private Builder() {
+        }
+
         public Builder groupNumber(int value) {
             this.groupNumber = value;
             return this;
@@ -58,6 +67,14 @@ public class Student {
         public Builder gradeBookNumber(long value) {
             this.gradeBookNumber = value;
             return this;
+        }
+
+        public Student build() {
+            if (groupNumber <= 0 || averageGrade < 0 || gradeBookNumber < 0) {
+                throw new IllegalStateException(
+                        "Не заполнены обязательные поля: группа, средний балл и номер зачётки");
+            }
+            return new Student(this);
         }
     }
 }
