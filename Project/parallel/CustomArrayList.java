@@ -48,6 +48,18 @@ public class CustomArrayList<T> extends AbstractList <T> {
         return (T) elements[index];
     }
 
+    // НОВЫЙ МЕТОД: нужен для работы алгоритмов сортировки (замена элемента по индексу)
+    @Override
+    @SuppressWarnings("unchecked")
+    public T set(int index, T element) {
+        if (index < 0 || index >= size) {
+            throw new IndexOutOfBoundsException("Индекс: " + index + ", Размер: " + size);
+        }
+        T oldValue = (T) elements[index];
+        elements[index] = element;
+        return oldValue;
+    }
+
     @Override
     public int size() {
         return size;
