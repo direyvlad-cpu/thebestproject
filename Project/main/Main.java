@@ -1,9 +1,11 @@
 package main;
 
+package main;
+
+import java.nio.file.Path;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Scanner;
-import java.util.function.Consumer;
 
 public class Main {
 
@@ -20,9 +22,38 @@ public class Main {
                     0 - выход""");
             System.out.print("Ваш выбор: ");
             switch (SCANNER.nextLine().trim()) {
-                case "1" -> runStudents();
-                case "2" -> runBuses();
-                case "3" -> runUsers();
+                case "1" -> runEntityMenu(
+                        new RandomFiller<>(),
+                        new ManualFiller<>(),
+                        new FileFiller<>(Path.of("input.txt")),
+                        List.of(
+                                new NamedComparator<>("группа", StudentComparators.BY_GROUP),
+                                new NamedComparator<>("средний балл", StudentComparators.BY_GRADE),
+                                new NamedComparator<>("зачётка", StudentComparators.BY_BOOK)),
+                        OddEvenOrdering.byAverageGrade(),
+                        "Введите номер группы для подсчёта кол-ва студентов: ",
+                        Student::parseKey);
+                case "2" -> runEntityMenu(
+                        new RandomFiller<>(),
+                        new ManualFiller<>(),
+                        new FileFiller<>(Path.of("input_bus.txt")),
+                        List.of(
+                                new NamedComparator<>("номер", BusComparators.BY_NUMBER),
+                                new NamedComparator<>("модель", BusComparators.BY_MODEL),
+                                new NamedComparator<>("пробег", BusComparators.BY_MILEAGE)),
+                        null,
+                        "Введите модель автобуса для подсчёта кол-ва: ",
+                        Bus::parseKey);
+                case "3" -> runEntityMenu(
+                        new RandomFiller<>(),
+                        new ManualFiller<>(),
+                        new FileFiller<>(Path.of("input_user.txt")),
+                        List.of(
+                                new NamedComparator<>("имя", UserComparators.BY_NAME),
+                                new NamedComparator<>("почта", UserComparators.BY_EMAIL)),
+                        null,
+                        "Введите почту для подсчёта кол-ва пользователей: ",
+                        User::parseKey);
                 case "0" -> {
                     System.out.println("Работа завершена.");
                     return;
@@ -32,102 +63,16 @@ public class Main {
         }
     }
 
-    // ---------- Студенты ----------
+    // ---------- Общий цикл меню для любого класса ----------
 
-    private static void runStudents() {
-        runEntityMenu(
-                new RandomStudentFiller(),
-                new ManualStudentFiller(),
-                new StudentFileFiller(Path.of("input.txt")),
-                List.of(
-                        new NamedComparator<>("группа", StudentComparators.BY_GROUP),
-                        new NamedComparator<>("средний балл", StudentComparators.BY_GRADE),
-                        new NamedComparator<>("зачётка", StudentComparators.BY_BOOK)),
-                list -> {
-                    Sorter<Student> sorter = new Sorter<>();
-                    sorter.setStrategy(new MergeSortStrategy<>());
-                    sorter.sort(list, OddEvenOrdering.byAverageGrade());
-                    list.forEach(System.out::println);
-                },
-                list -> {
-                    System.out.print("Введите номер группы для подсчёта кол-ва студентов: ");
-                    long target = DataValidator.validateGradeBookNumber(SCANNER.nextLine());
-                    Student probe = new Student.Builder()
-                            .gradeBookNumber(target)
-                            .groupNumber(1)
-                            .averageGrade(0)
-                            .build();
-                    new Counter<Student>().count(list, probe,
-                            (a, b) -> a.getGradeBookNumber() == b.getGradeBookNumber(), 4);
-                });
-    }
-
-    // ---------- Автобусы ----------
-
-    private static void runBuses() {
-        runEntityMenu(
-                new RandomBusFiller(),
-                new ManualBusFiller(),
-                new BusFileFiller(Path.of("input_bus.txt")),
-                List.of(
-                        new NamedComparator<>("номер", BusComparators.BY_NUMBER),
-                        new NamedComparator<>("модель", BusComparators.BY_MODEL),
-                        new NamedComparator<>("пробег", BusComparators.BY_MILEAGE)),
-                null,
-                list -> {
-                    System.out.print("Введите номер автобуса для подсчёта кол-ва: ");
-                    String target = SCANNER.nextLine().trim();
-                    try {
-                        Bus probe = Bus.builder()
-                                .number(target)
-                                .model("probe")
-                                .mileage(0)
-                                .build();
-                        new Counter<Bus>().count(list, probe,
-                                (a, b) -> a.getNumber().equals(b.getNumber()), 4);
-                    } catch (IllegalStateException e) {
-                        System.out.println("Ошибка: " + e.getMessage());
-                    }
-                });
-    }
-
-    // ---------- Пользователи ----------
-
-    private static void runUsers() {
-        runEntityMenu(
-                new RandomUserFiller(),
-                new ManualUserFiller(),
-                new UserFileFiller(Path.of("input_user.txt")),
-                List.of(
-                        new NamedComparator<>("имя", UserComparators.BY_NAME),
-                        new NamedComparator<>("почта", UserComparators.BY_EMAIL)),
-                null,
-                list -> {
-                    System.out.print("Введите почту для подсчёта кол-ва пользователей: ");
-                    String email = SCANNER.nextLine().trim();
-                    try {
-                        User probe = User.builder()
-                                .name("probe")
-                                .password("probe")
-                                .email(email)
-                                .build();
-                        new Counter<User>().count(list, probe,
-                                (a, b) -> a.getEmail().equals(b.getEmail()), 4);
-                    } catch (IllegalStateException e) {
-                        System.out.println("Ошибка: " + e.getMessage());
-                    }
-                });
-    }
-
-    // ---------- Общий цикл меню ----------
-
-    private static <T> void runEntityMenu(
+    private static <T extends Keyed<T>> void runEntityMenu(
             DataFiller<T> randomFiller,
             DataFiller<T> manualFiller,
             DataFiller<T> fileFiller,
             List<NamedComparator<T>> comparators,
-            Consumer<List<T>> oddEvenAction,   // null — если доп-1 не применимо
-            Consumer<List<T>> countAction) {
+            Comparator<T> oddEvenOrdering,   // null — если доп-1 не применимо
+            String countPrompt,
+            KeyParser<T> keyParser) {
 
         List<T> items = new CustomArrayList<>();
         Sorter<T> sorter = new Sorter<>();
@@ -152,14 +97,24 @@ public class Main {
                     items.forEach(System.out::println);
                 }
                 case "3" -> {
-                    if (oddEvenAction == null) {
-                        System.out.println("Сортировка чёт/нечёт доступна только для студентов.");
+                    if (oddEvenOrdering == null) {
+                        System.out.println("Сортировка чёт/нечёт для этого типа не поддерживается.");
                     } else {
-                        oddEvenAction.accept(items);
+                        sorter.setStrategy(new MergeSortStrategy<>());
+                        sorter.sort(items, oddEvenOrdering);
+                        items.forEach(System.out::println);
                     }
                 }
                 case "4" -> writer.append(items);
-                case "5" -> countAction.accept(items);
+                case "5" -> {
+                    System.out.print(countPrompt);
+                    try {
+                        T probe = keyParser.parse(SCANNER.nextLine().trim());
+                        System.out.println("Найдено вхождений: " + counter.count(items, probe));
+                    } catch (ValidationException | IllegalStateException e) {
+                        System.out.println("Ошибка: " + e.getMessage());
+                    }
+                }
                 case "0" -> {
                     return;
                 }
