@@ -1,7 +1,5 @@
 package main;
 
-package main;
-
 import java.nio.file.Path;
 import java.util.Comparator;
 import java.util.List;
@@ -172,7 +170,3 @@ public class Main {
     public record NamedComparator<T>(String name, Comparator<T> comparator) {
     }
 }
-
-
-
-
