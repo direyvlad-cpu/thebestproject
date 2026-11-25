@@ -4,21 +4,32 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.*;
+import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-public class ParallelCounter {
+public class ParallelCounter <T> {
+
+    public ParallelCounter() {
+    }
+
     //МОЖЕТ СДЕЛАТЬ ЛОГИРОВАНИЕ В INFO???
     private static final Logger LOGGER = Logger.getLogger(ParallelCounter.class.getSimpleName());
-    //Многопоточный подсчет кол-ва вхождений N элемента в список
-    public static <T> long calculateAmountByObjects(CustomArrayList<T> elements, T object) {
-        if (elements == null ) { //переписать проверку?
+
+    //Многопоточный подсчет кол-ва вхождений N элемента (поля) в список
+    public <V> long countByField(CustomArrayList<T> elements,
+                                 Function<T,V> getField, V value) {
+        if (elements == null) {
             LOGGER.log(Level.WARNING, "Передан null вместо списка для подсчёта вхождений");
             throw new IllegalArgumentException("Список не должен быть null");
         }
+        if (getField == null) {
+            LOGGER.log(Level.WARNING, "Передан null вместо извлекателя поля");
+            throw new IllegalArgumentException("Извлекатель поля не должен быть null");
+        }
 
         if (elements.isEmpty()) {
-            LOGGER.log(Level.FINE, "Список пуст, количество вхождений: 0");
+            LOGGER.log(Level.INFO, "Список пуст, количество вхождений: 0");
             return 0L;
         }
 
@@ -28,18 +39,19 @@ public class ParallelCounter {
         ExecutorService executor = Executors.newFixedThreadPool(countThreads);
 
         try {
-            List <Future<Long>> futures = submitTasks(executor, elements, object, countThreads);
+            List<Future<Long>> futures = submitTasks(executor, elements, getField, value, countThreads);
             long totalCount = aggregateResults(futures);
 
-            //Этот лог делаем уровня INFO, чтобы выводился на консоль
-            LOGGER.log(Level.INFO, "Найдено вхождений объекта {0}: {1}",
-                    new Object[]{object, totalCount});
+            // Этот лог делаем уровня INFO, чтобы выводился на консоль
+            LOGGER.log(Level.INFO, "Найдено вхождений по значению {0}: {1}",
+                    new Object[]{value, totalCount});
 
             return totalCount;
         } finally {
             executor.shutdown(); // Обязательное закрытие пула потоков
         }
     }
+
 
     //Расчет оптимального количества потоков (не больше, чем ядер процессора или элементов в списке)
     private static int calculateThreadCount(int size) {
@@ -48,8 +60,9 @@ public class ParallelCounter {
     }
 
     //Метод распределения задач
-    private static <T> List<Future<Long>> submitTasks (ExecutorService executor, CustomArrayList<T> elements,
-                                                   T object, int countThreads) {
+    private static <T,V> List<Future<Long>> submitTasks (ExecutorService executor,
+                                                       CustomArrayList<T> elements, Function<T,V> getField,
+                                                       V value, int countThreads) {
         //список для хранения ссылок на будущие результаты выполнения потоков
         List<Future<Long>> futures = new ArrayList<>();
         int chunkSize = calculateChunkSize(elements.size(), countThreads);
@@ -62,7 +75,7 @@ public class ParallelCounter {
             if (start >= elements.size()) break;
 
             // Каждая задача считает кол-во вхождений по заданному параметру на своем отрезке
-            Callable<Long> task = () -> countInRange(elements, start, end, object);
+            Callable<Long> task = () -> countInRange(elements, start, end, getField, value);
             //отправляем задачу на выполнение в пул потоков и сохраняем объект Future в список.
             futures.add(executor.submit(task));
         }
@@ -74,14 +87,21 @@ public class ParallelCounter {
         return (int) Math.ceil((double) listSize / countThreads);
     }
 
-    //Метод локального подсчета кол-ва совпадений по объектам в одном потоке
-    private static <T> long countInRange(CustomArrayList<T> elements,
-                                     int start, int end, T object) {
+    //Метод локального подсчета кол-ва совпадений по значению поля в одном потоке
+    private static <T,V> long countInRange(CustomArrayList<T> elements,
+                                     int start, int end, Function<T,V> getField, V value) {
         long localCount = 0;
         for (int i = start; i < end; i++) {
             T current = elements.get(i);
-            // Проверяем, что объекты совпадают
-            if (Objects.equals(current, object)) {
+            //V actualValue = current == null ? null : getField.apply(current);
+            // — достаём значение нужного поля из объекта:
+            //Если сам объект вдруг оказался null, не вызываем getField.apply(...)
+            // (иначе словили бы NullPointerException), а кладём null в actualValue.
+            //Если объект нормальный, вызывается переданная функция
+            // (например, student.getGroupNumber(), bus.getModel() или user.getEmail()).
+            V actualValue = current == null ? null : getField.apply(current);
+            // Проверяем, что значения полей совпадают
+            if (Objects.equals(actualValue, value)) {
                 localCount++;
             }
         }

@@ -1,10 +1,18 @@
 package main;
 
 
+import model.Bus;
+import model.DataFiller;
+import model.Student;
+import model.User;
+import parallel.CustomArrayList;
+import parallel.ParallelCounter;
+
 import java.nio.file.Path;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Scanner;
+import java.util.function.Function;
 
 public class Main {
 
@@ -31,7 +39,8 @@ public class Main {
                                 new NamedComparator<>("зачётка", StudentComparators.BY_BOOK)),
                         OddEvenOrdering.byAverageGrade(),
                         "Введите номер группы для подсчёта кол-ва студентов: ",
-                        Student::parseKey);
+                        Student::getGroupNumber,
+                        Integer::parseInt);
                 case "2" -> runEntityMenu(
                         new RandomFiller<>(),
                         new ManualFiller<>(),
@@ -42,7 +51,8 @@ public class Main {
                                 new NamedComparator<>("пробег", BusComparators.BY_MILEAGE)),
                         null,
                         "Введите модель автобуса для подсчёта кол-ва: ",
-                        Bus::parseKey);
+                        Bus::getModel,
+                        String::trim);
                 case "3" -> runEntityMenu(
                         new RandomFiller<>(),
                         new ManualFiller<>(),
@@ -52,7 +62,8 @@ public class Main {
                                 new NamedComparator<>("почта", UserComparators.BY_EMAIL)),
                         null,
                         "Введите почту для подсчёта кол-ва пользователей: ",
-                        User::parseKey);
+                        User::getEmail,
+                        String::trim);
                 case "0" -> {
                     System.out.println("Работа завершена.");
                     return;
@@ -64,19 +75,20 @@ public class Main {
 
     // ---------- Общий цикл меню для любого класса ----------
 
-    private static <T extends Keyed<T>> void runEntityMenu(
+    private static <T, V> void runEntityMenu(
             DataFiller<T> randomFiller,
             DataFiller<T> manualFiller,
             DataFiller<T> fileFiller,
             List<NamedComparator<T>> comparators,
             Comparator<T> oddEvenOrdering,   // null — если доп-1 не применимо
             String countPrompt,
-            KeyParser<T> keyParser) {
+            Function<T,V> getField,
+            Function<String, V> valueParser) {
 
-        List<T> items = new CustomArrayList<>();
+        CustomArrayList<T> items = new CustomArrayList<>();
         Sorter<T> sorter = new Sorter<>();
         EntityFileWriter<T> writer = new EntityFileWriter<>(Path.of("output.txt"));
-        Counter<T> counter = new Counter<>();
+        ParallelCounter<T> counter = new ParallelCounter<>();
 
         while (true) {
             System.out.println("""
@@ -108,9 +120,11 @@ public class Main {
                 case "5" -> {
                     System.out.print(countPrompt);
                     try {
-                        T probe = keyParser.parse(SCANNER.nextLine().trim());
-                        System.out.println("Найдено вхождений: " + counter.count(items, probe));
-                    } catch (ValidationException | IllegalStateException e) {
+                        String rawInput = SCANNER.nextLine().trim();
+                        V value = valueParser.apply(rawInput);
+                        long count = counter.countByField(items, getField, value);
+                        System.out.println("Найдено вхождений: " + count);
+                    } catch (ValidationException | IllegalStateException | IllegalArgumentException e) {
                         System.out.println("Ошибка: " + e.getMessage());
                     }
                 }
@@ -125,15 +139,15 @@ public class Main {
     private static <T> List<T> fillFromMenu(DataFiller<T> randomFiller,
                                             DataFiller<T> manualFiller,
                                             DataFiller<T> fileFiller) {
-        System.out.print("Длина массива: ");
-        int size = DataValidator.validatePositiveInt(SCANNER.nextLine(), "Длина массива");
-        System.out.println("1 - случайно, 2 - вручную, 3 - из файла");
-        DataFiller<T> filler = switch (SCANNER.nextLine().trim()) {
-            case "1" -> randomFiller;
-            case "2" -> manualFiller;
-            default -> fileFiller;
-        };
         try {
+            System.out.print("Длина массива: ");
+            int size = DataValidator.validatePositiveInt(SCANNER.nextLine(), "Длина массива");
+            System.out.println("1 - случайно, 2 - вручную, 3 - из файла");
+            DataFiller<T> filler = switch (SCANNER.nextLine().trim()) {
+                case "1" -> randomFiller;
+                case "2" -> manualFiller;
+                default -> fileFiller;
+            };
             return filler.fill(size);
         } catch (ValidationException e) {
             System.out.println("Ошибка: " + e.getMessage());
