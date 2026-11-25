@@ -1,19 +1,11 @@
-package main;
+package Project.main;
 
-import model.Bus;
-import model.BusComparators;
-import model.DataFiller;
-import model.EntityInput;
-import model.EntityParser;
-import model.FileFiller;
-import model.ManualFiller;
-import model.RandomFiller;
-import model.Student;
-import model.StudentComparators;
-import model.User;
-import model.UserComparators;
-import parallel.CustomArrayList;
-import parallel.ParallelCounter;
+import Project.model.*;
+import Project.sorting.*;
+import Project.validation.*;
+import Project.parallel.*;
+import Project.io.*;
+import Project.test.*;
 
 import java.nio.file.Path;
 import java.util.Comparator;
