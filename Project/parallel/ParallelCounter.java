@@ -1,26 +1,39 @@
-package model;
+package parallel;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class ParallelCounter {
-
-    //Многопоточный подсчет студентов по номеру группы через ExecutorService.
-    public static long countStudentsByGroup (CustomArrayList<Student> students, int groupNumber) {
-        if (students == null || students.isEmpty()) { //переписать проверку?
-            System.out.println("Студенты отсутствуют в группе: " + groupNumber); //надо ли?
-            return 0;
+    //МОЖЕТ СДЕЛАТЬ ЛОГИРОВАНИЕ В INFO???
+    private static final Logger LOGGER = Logger.getLogger(ParallelCounter.class.getSimpleName());
+    //Многопоточный подсчет кол-ва вхождений N элемента в список
+    public static <T> long calculateAmountByObjects(CustomArrayList<T> elements, T object) {
+        if (elements == null ) { //переписать проверку?
+            LOGGER.log(Level.WARNING, "Передан null вместо списка для подсчёта вхождений");
+            throw new IllegalArgumentException("Список не должен быть null");
         }
 
-        int countThreads = calculateThreadCount(students.size());
+        if (elements.isEmpty()) {
+            LOGGER.log(Level.FINE, "Список пуст, количество вхождений: 0");
+            return 0L;
+        }
+
+        int countThreads = calculateThreadCount(elements.size());
+
+        LOGGER.log(Level.FINE, "Запуск подсчёта вхождений");
         ExecutorService executor = Executors.newFixedThreadPool(countThreads);
 
         try {
-            List <Future<Long>> futures = submitTasks(executor, students, groupNumber, countThreads);
+            List <Future<Long>> futures = submitTasks(executor, elements, object, countThreads);
             long totalCount = aggregateResults(futures);
 
-            printResult(groupNumber, totalCount);
+            //Этот лог делаем уровня INFO, чтобы выводился на консоль
+            LOGGER.log(Level.INFO, "Найдено вхождений объекта {0}: {1}",
+                    new Object[]{object, totalCount});
 
             return totalCount;
         } finally {
@@ -29,27 +42,27 @@ public class ParallelCounter {
     }
 
     //Расчет оптимального количества потоков (не больше, чем ядер процессора или элементов в списке)
-    private static int calculateThreadCount(int countStudents) {
+    private static int calculateThreadCount(int size) {
         int countProcessors = Runtime.getRuntime().availableProcessors();
-        return Math.min(countProcessors, countStudents);
+        return Math.min(countProcessors, size);
     }
 
     //Метод распределения задач
-    private static List<Future<Long>> submitTasks (ExecutorService executor, CustomArrayList<Student> students,
-                                                   int groupNumber, int countThreads) {
+    private static <T> List<Future<Long>> submitTasks (ExecutorService executor, CustomArrayList<T> elements,
+                                                   T object, int countThreads) {
         //список для хранения ссылок на будущие результаты выполнения потоков
         List<Future<Long>> futures = new ArrayList<>();
-        int chunkSize = calculateChunkSize(students.size(), countThreads);
+        int chunkSize = calculateChunkSize(elements.size(), countThreads);
 
         //цикл создает ровно столько задач, сколько у нас запланировано потоков.
         for (int i = 0; i < countThreads; i++ ) {
             final int start = i * chunkSize;
-            final int end = Math.min(start + chunkSize, students.size());
+            final int end = Math.min(start + chunkSize, elements.size());
 
-            if (start >= students.size()) break;
+            if (start >= elements.size()) break;
 
-            // Каждая задача считает студентов с нужным номером группы на своем отрезке
-            Callable<Long> task = () -> countInRange(students, start, end, groupNumber);
+            // Каждая задача считает кол-во вхождений по заданному параметру на своем отрезке
+            Callable<Long> task = () -> countInRange(elements, start, end, object);
             //отправляем задачу на выполнение в пул потоков и сохраняем объект Future в список.
             futures.add(executor.submit(task));
         }
@@ -61,14 +74,14 @@ public class ParallelCounter {
         return (int) Math.ceil((double) listSize / countThreads);
     }
 
-    //Метод локального подсчета кол-ва студентов в одном потоке
-    private static long countInRange(CustomArrayList<Student> students,
-                                     int start, int end, int groupNumber) {
+    //Метод локального подсчета кол-ва совпадений по объектам в одном потоке
+    private static <T> long countInRange(CustomArrayList<T> elements,
+                                     int start, int end, T object) {
         long localCount = 0;
         for (int i = start; i < end; i++) {
-            Student student = students.get(i);
-            // Проверяем, что студент существует и его группа совпадает с искомой
-            if (student != null && student.getGroupNumber() == groupNumber) {
+            T current = elements.get(i);
+            // Проверяем, что объекты совпадают
+            if (Objects.equals(current, object)) {
                 localCount++;
             }
         }
@@ -86,13 +99,9 @@ public class ParallelCounter {
             }
         } catch (InterruptedException | ExecutionException e) {
             Thread.currentThread().interrupt();
-            System.out.println("Ошибка при многопоточных вычислениях: " + e.getMessage());
+            LOGGER.log(Level.WARNING, "Ошибка при многопоточных вычислениях или поток был прерван", e);
+            throw new IllegalStateException("Ошибка при многопоточных вычислениях или поток был прерван", e);
         }
-
         return totalCount;
-    }
-
-    private static void printResult(int groupNumber, long totalCount) {
-        System.out.println("Количество студентов в группе " + groupNumber + ": " + totalCount);
     }
 }
