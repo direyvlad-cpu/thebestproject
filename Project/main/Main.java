@@ -1,6 +1,7 @@
 package main;
 
 import model.Bus;
+import model.BusComparators;
 import model.DataFiller;
 import model.EntityInput;
 import model.EntityParser;
@@ -8,7 +9,9 @@ import model.FileFiller;
 import model.ManualFiller;
 import model.RandomFiller;
 import model.Student;
+import model.StudentComparators;
 import model.User;
+import model.UserComparators;
 import parallel.CustomArrayList;
 import parallel.ParallelCounter;
 
