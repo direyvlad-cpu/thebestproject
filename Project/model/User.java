@@ -38,6 +38,25 @@ public class User implements Comparable<User> {
     }
 
     @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        User user = (User) o;
+        return name.equals(user.name)
+                && password.equals(user.password)
+                && email.equals(user.email);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(name, password, email);
+    }
+
+    @Override
     public String toString() {
         return "User{имя=" + name
                 + ", почта=" + email + "}";

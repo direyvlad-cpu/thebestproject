@@ -1,6 +1,5 @@
 package main;
 
-package main;
 
 import java.nio.file.Path;
 import java.util.Comparator;
