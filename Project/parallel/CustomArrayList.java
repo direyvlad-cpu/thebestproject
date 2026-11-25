@@ -1,4 +1,4 @@
-package model;
+package parallel;
 
 import java.util.*;
 import java.util.logging.Level;
@@ -85,6 +85,13 @@ public class CustomArrayList<T> extends AbstractList <T> {
     public T get(int index) {
         checkIndex(index);
         return (T) elements[index];
+    }
+
+    private void checkIndex(int index) {
+        if (index < 0 || index >= size) {
+            LOGGER.log(Level.WARNING, "Некорректный индекс: {0}", index);
+            throw new IndexOutOfBoundsException("Индекс " + index + ", Размер: " + size);
+        }
     }
 
     @Override
