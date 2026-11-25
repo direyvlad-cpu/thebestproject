@@ -1,0 +1,26 @@
+Что изменить в Main.java
+Для каждого типа сущности укажи обработчики ручного ввода и файлового чтения.
+
+Например, для студентов:
+new RandomFiller<>(),
+new ManualFiller<>(SCANNER, EntityInput::readStudent),
+new FileFiller<>(Path.of("input.txt"), EntityParser::parseStudent),
+
+
+Для автобусов:
+new RandomFiller<>(),
+new ManualFiller<>(SCANNER, EntityInput::readBus),
+new FileFiller<>(Path.of("input_bus.txt"), EntityParser::parseBus),
+
+
+Для пользователей:
+new RandomFiller<>(),
+new ManualFiller<>(SCANNER, EntityInput::readUser),
+new FileFiller<>(Path.of("input_user.txt"), EntityParser::parseUser),
+
+
+Также добавь необходимые импорты:
+import model.EntityInput;
+import model.EntityParser;
+import model.FileFiller;
+import model.*;
