@@ -5,7 +5,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collector;
 
-//может назвать по-другому?
 public class CustomArrayList<T> extends AbstractList <T> {
     private static final Logger LOGGER = Logger.getLogger(CustomArrayList.class.getSimpleName());
     private static final int DEFAULT_CAPACITY = 10; //размер по умолчанию
