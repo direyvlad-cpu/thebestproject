@@ -1,45 +1,58 @@
 package main;
 
+
+import java.nio.file.Path;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Scanner;
+
 public class Main {
 
     private static final Scanner SCANNER = new Scanner(System.in);
 
     public static void main(String[] args) {
-
-        //поля инициализации
-
         while (true) {
             System.out.println("""
-                    
-                    1 - заполнить массив
-                    2 - отсортировать
-                    3 - сортировка чёт/нечёт (доп-1)
-                    4 - записать результат в файл (доп-2)
-                    5 - подсчитать вхождения элемента (доп-4)
+
+                    Выберите класс для работы:
+                    1 - Студенты
+                    2 - Автобусы
+                    3 - Пользователи
                     0 - выход""");
             System.out.print("Ваш выбор: ");
             switch (SCANNER.nextLine().trim()) {
-                case "1" -> students = fillFromMenu();
-                case "2" -> {
-                    sorter.setStrategy(chooseStrategy());
-                    sorter.sort(students, chooseField());
-                    students.forEach(System.out::println);
-                }
-                case "3" -> {
-                    sorter.setStrategy(new MergeSortStrategy<>());
-                    sorter.sort(students, OddEvenOrdering.byAverageGrade());
-                    students.forEach(System.out::println);
-                }
-                case "4" -> writer.append(students);
-                case "5" -> {
-                    System.out.print("Введите номер зачётки для поиска: ");
-                    long target = DataValidator.validateGradeBookNumber(SCANNER.nextLine());
-                    counter.count(students,
-                            new Student.Builder().gradeBookNumber(target)
-                                    .groupNumber(1).averageGrade(0).build(),
-                            (a, b) -> a.getGradeBookNumber() == b.getGradeBookNumber(),
-                            4);
-                }
+                case "1" -> runEntityMenu(
+                        new RandomFiller<>(),
+                        new ManualFiller<>(),
+                        new FileFiller<>(Path.of("input.txt")),
+                        List.of(
+                                new NamedComparator<>("группа", StudentComparators.BY_GROUP),
+                                new NamedComparator<>("средний балл", StudentComparators.BY_GRADE),
+                                new NamedComparator<>("зачётка", StudentComparators.BY_BOOK)),
+                        OddEvenOrdering.byAverageGrade(),
+                        "Введите номер группы для подсчёта кол-ва студентов: ",
+                        Student::parseKey);
+                case "2" -> runEntityMenu(
+                        new RandomFiller<>(),
+                        new ManualFiller<>(),
+                        new FileFiller<>(Path.of("input_bus.txt")),
+                        List.of(
+                                new NamedComparator<>("номер", BusComparators.BY_NUMBER),
+                                new NamedComparator<>("модель", BusComparators.BY_MODEL),
+                                new NamedComparator<>("пробег", BusComparators.BY_MILEAGE)),
+                        null,
+                        "Введите модель автобуса для подсчёта кол-ва: ",
+                        Bus::parseKey);
+                case "3" -> runEntityMenu(
+                        new RandomFiller<>(),
+                        new ManualFiller<>(),
+                        new FileFiller<>(Path.of("input_user.txt")),
+                        List.of(
+                                new NamedComparator<>("имя", UserComparators.BY_NAME),
+                                new NamedComparator<>("почта", UserComparators.BY_EMAIL)),
+                        null,
+                        "Введите почту для подсчёта кол-ва пользователей: ",
+                        User::parseKey);
                 case "0" -> {
                     System.out.println("Работа завершена.");
                     return;
@@ -49,14 +62,76 @@ public class Main {
         }
     }
 
-    private static List<Student> fillFromMenu() {
+    // ---------- Общий цикл меню для любого класса ----------
+
+    private static <T extends Keyed<T>> void runEntityMenu(
+            DataFiller<T> randomFiller,
+            DataFiller<T> manualFiller,
+            DataFiller<T> fileFiller,
+            List<NamedComparator<T>> comparators,
+            Comparator<T> oddEvenOrdering,   // null — если доп-1 не применимо
+            String countPrompt,
+            KeyParser<T> keyParser) {
+
+        List<T> items = new CustomArrayList<>();
+        Sorter<T> sorter = new Sorter<>();
+        EntityFileWriter<T> writer = new EntityFileWriter<>(Path.of("output.txt"));
+        Counter<T> counter = new Counter<>();
+
+        while (true) {
+            System.out.println("""
+
+                    1 - заполнить массив
+                    2 - отсортировать
+                    3 - сортировка чёт/нечёт (доп-1)
+                    4 - записать результат в файл (доп-2)
+                    5 - подсчитать вхождения элемента (доп-4)
+                    0 - выход в выбор класса""");
+            System.out.print("Ваш выбор: ");
+            switch (SCANNER.nextLine().trim()) {
+                case "1" -> items = fillFromMenu(randomFiller, manualFiller, fileFiller);
+                case "2" -> {
+                    sorter.setStrategy(chooseStrategy());
+                    sorter.sort(items, chooseComparator(comparators));
+                    items.forEach(System.out::println);
+                }
+                case "3" -> {
+                    if (oddEvenOrdering == null) {
+                        System.out.println("Сортировка чёт/нечёт для этого типа не поддерживается.");
+                    } else {
+                        sorter.setStrategy(new MergeSortStrategy<>());
+                        sorter.sort(items, oddEvenOrdering);
+                        items.forEach(System.out::println);
+                    }
+                }
+                case "4" -> writer.append(items);
+                case "5" -> {
+                    System.out.print(countPrompt);
+                    try {
+                        T probe = keyParser.parse(SCANNER.nextLine().trim());
+                        System.out.println("Найдено вхождений: " + counter.count(items, probe));
+                    } catch (ValidationException | IllegalStateException e) {
+                        System.out.println("Ошибка: " + e.getMessage());
+                    }
+                }
+                case "0" -> {
+                    return;
+                }
+                default -> System.out.println("Нет такой команды, попробуйте снова.");
+            }
+        }
+    }
+
+    private static <T> List<T> fillFromMenu(DataFiller<T> randomFiller,
+                                            DataFiller<T> manualFiller,
+                                            DataFiller<T> fileFiller) {
         System.out.print("Длина массива: ");
         int size = DataValidator.validatePositiveInt(SCANNER.nextLine(), "Длина массива");
         System.out.println("1 - случайно, 2 - вручную, 3 - из файла");
-        DataFiller<Student> filler = switch (SCANNER.nextLine().trim()) {
-            case "1" -> new RandomStudentFiller();
-            case "2" -> new ManualStudentFiller();
-            default -> new StudentFileFiller(Path.of("input.txt"));
+        DataFiller<T> filler = switch (SCANNER.nextLine().trim()) {
+            case "1" -> randomFiller;
+            case "2" -> manualFiller;
+            default -> fileFiller;
         };
         try {
             return filler.fill(size);
@@ -66,7 +141,7 @@ public class Main {
         }
     }
 
-    private static SortStrategy<Student> chooseStrategy() {
+    private static <T> SortStrategy<T> chooseStrategy() {
         System.out.println("1 - пузырьковая, 2 - вставками, 3 - слиянием");
         return switch (SCANNER.nextLine().trim()) {
             case "1" -> new BubbleSortStrategy<>();
@@ -75,12 +150,24 @@ public class Main {
         };
     }
 
-    private static Comparator<Student> chooseField() {
-        System.out.println("Поле: 1 - группа, 2 - средний балл, 3 - зачётка");
-        return switch (SCANNER.nextLine().trim()) {
-            case "1" -> StudentComparators.BY_GROUP;
-            case "2" -> StudentComparators.BY_GRADE;
-            default -> StudentComparators.BY_BOOK;
-        };
+    private static <T> Comparator<T> chooseComparator(List<NamedComparator<T>> options) {
+        for (int i = 0; i < options.size(); i++) {
+            System.out.println((i + 1) + " - " + options.get(i).name());
+        }
+        System.out.print("Поле: ");
+        int index;
+        try {
+            index = Integer.parseInt(SCANNER.nextLine().trim()) - 1;
+        } catch (NumberFormatException e) {
+            index = options.size() - 1;
+        }
+        if (index < 0 || index >= options.size()) {
+            index = options.size() - 1;
+        }
+        return options.get(index).comparator();
+    }
+
+    // Именованный компаратор: название пункта меню + сам компаратор
+    public record NamedComparator<T>(String name, Comparator<T> comparator) {
     }
 }

@@ -87,13 +87,6 @@ public class CustomArrayList<T> extends AbstractList <T> {
         return (T) elements[index];
     }
 
-    private void checkIndex(int index) {
-        if (index < 0 || index >= size) {
-            LOGGER.log(Level.WARNING, "Некорректный индекс: {0}", index);
-            throw new IndexOutOfBoundsException("Индекс " + index + ", Размер: " + size);
-        }
-    }
-
     @Override
     public int size() {
         return size;
