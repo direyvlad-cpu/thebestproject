@@ -1,8 +1,8 @@
 package model;
 
+import java.util.Objects;
 
 public class Student implements Comparable<Student> {
-
     private final int groupNumber;
     private final double averageGrade;
     private final long gradeBookNumber;
@@ -13,22 +13,10 @@ public class Student implements Comparable<Student> {
         this.gradeBookNumber = builder.gradeBookNumber;
     }
 
-
-    public static Builder builder() {
-        return new Builder();
-    }
-
-    public int getGroupNumber() {
-        return groupNumber;
-    }
-
-    public double getAverageGrade() {
-        return averageGrade;
-    }
-
-    public long getGradeBookNumber() {
-        return gradeBookNumber;
-    }
+    public static Builder builder() { return new Builder(); }
+    public int getGroupNumber() { return groupNumber; }
+    public double getAverageGrade() { return averageGrade; }
+    public long getGradeBookNumber() { return gradeBookNumber; }
 
     @Override
     public int compareTo(Student other) {
@@ -37,12 +25,8 @@ public class Student implements Comparable<Student> {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
         Student student = (Student) o;
         return groupNumber == student.groupNumber
                 && Double.compare(student.averageGrade, averageGrade) == 0
@@ -70,29 +54,15 @@ public class Student implements Comparable<Student> {
         private double averageGrade = -1;
         private long gradeBookNumber = -1;
 
-        private Builder() {
-        }
-
-        public Builder groupNumber(int value) {
-            this.groupNumber = value;
-            return this;
-        }
-
-        public Builder averageGrade(double value) {
-            this.averageGrade = value;
-            return this;
-        }
-
-        public Builder gradeBookNumber(long value) {
-            this.gradeBookNumber = value;
-            return this;
-        }
+        private Builder() { }
+        public Builder groupNumber(int value) { this.groupNumber = value; return this; }
+        public Builder averageGrade(double value) { this.averageGrade = value; return this; }
+        public Builder gradeBookNumber(long value) { this.gradeBookNumber = value; return this; }
 
         public Student build() {
-            if (groupNumber <= 0 || averageGrade < 0 || gradeBookNumber < 0) {
-                throw new IllegalStateException(
-                        "Не заполнены обязательные поля: группа, средний балл и номер зачётки");
-            }
+            DataValidator.validatePositiveInt(groupNumber, "Номер группы");
+            DataValidator.validateAverageGrade(averageGrade);
+            DataValidator.validatePositiveLong(gradeBookNumber, "Номер зачётки");
             return new Student(this);
         }
     }
