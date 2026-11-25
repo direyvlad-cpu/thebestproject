@@ -39,6 +39,25 @@ public class Bus implements Comparable<Bus> {
     }
 
     @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        Bus bus = (Bus) o;
+        return Double.compare(bus.mileage, mileage) == 0
+                && number.equals(bus.number)
+                && model.equals(bus.model);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(number, model, mileage);
+    }
+
+    @Override
     public String toString() {
         return "Bus{номер=" + number
                 + ", модель=" + model

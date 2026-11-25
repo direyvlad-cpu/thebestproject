@@ -36,6 +36,25 @@ public class Student implements Comparable<Student> {
     }
 
     @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        Student student = (Student) o;
+        return groupNumber == student.groupNumber
+                && Double.compare(student.averageGrade, averageGrade) == 0
+                && gradeBookNumber == student.gradeBookNumber;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(groupNumber, averageGrade, gradeBookNumber);
+    }
+
+    @Override
     public String toString() {
         return "Student{группа=" + groupNumber
                 + ", средний балл=" + averageGrade
