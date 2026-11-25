@@ -1,8 +1,12 @@
 package main;
 
-
 import model.Bus;
 import model.DataFiller;
+import model.EntityInput;
+import model.EntityParser;
+import model.FileFiller;
+import model.ManualFiller;
+import model.RandomFiller;
 import model.Student;
 import model.User;
 import parallel.CustomArrayList;
@@ -21,7 +25,6 @@ public class Main {
     public static void main(String[] args) {
         while (true) {
             System.out.println("""
-
                     Выберите класс для работы:
                     1 - Студенты
                     2 - Автобусы
@@ -31,8 +34,8 @@ public class Main {
             switch (SCANNER.nextLine().trim()) {
                 case "1" -> runEntityMenu(
                         new RandomFiller<>(),
-                        new ManualFiller<>(),
-                        new FileFiller<>(Path.of("input.txt")),
+                        new ManualFiller<>(SCANNER, EntityInput::readStudent),
+                        new FileFiller<>(Path.of("input.txt"), EntityParser::parseStudent),
                         List.of(
                                 new NamedComparator<>("группа", StudentComparators.BY_GROUP),
                                 new NamedComparator<>("средний балл", StudentComparators.BY_GRADE),
@@ -43,8 +46,8 @@ public class Main {
                         Integer::parseInt);
                 case "2" -> runEntityMenu(
                         new RandomFiller<>(),
-                        new ManualFiller<>(),
-                        new FileFiller<>(Path.of("input_bus.txt")),
+                        new ManualFiller<>(SCANNER, EntityInput::readBus),
+                        new FileFiller<>(Path.of("input_bus.txt"), EntityParser::parseBus),
                         List.of(
                                 new NamedComparator<>("номер", BusComparators.BY_NUMBER),
                                 new NamedComparator<>("модель", BusComparators.BY_MODEL),
@@ -55,8 +58,8 @@ public class Main {
                         String::trim);
                 case "3" -> runEntityMenu(
                         new RandomFiller<>(),
-                        new ManualFiller<>(),
-                        new FileFiller<>(Path.of("input_user.txt")),
+                        new ManualFiller<>(SCANNER, EntityInput::readUser),
+                        new FileFiller<>(Path.of("input_user.txt"), EntityParser::parseUser),
                         List.of(
                                 new NamedComparator<>("имя", UserComparators.BY_NAME),
                                 new NamedComparator<>("почта", UserComparators.BY_EMAIL)),
@@ -82,7 +85,7 @@ public class Main {
             List<NamedComparator<T>> comparators,
             Comparator<T> oddEvenOrdering,   // null — если доп-1 не применимо
             String countPrompt,
-            Function<T,V> getField,
+            Function<T, V> getField,
             Function<String, V> valueParser) {
 
         CustomArrayList<T> items = new CustomArrayList<>();
@@ -92,7 +95,6 @@ public class Main {
 
         while (true) {
             System.out.println("""
-
                     1 - заполнить массив
                     2 - отсортировать
                     3 - сортировка чёт/нечёт (доп-1)
