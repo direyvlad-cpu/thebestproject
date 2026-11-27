@@ -108,7 +108,8 @@ public class Main {
                     if (oddEvenOrdering == null) {
                         System.out.println("Сортировка чёт/нечёт для этого типа не поддерживается.");
                     } else {
-                        sorter.setStrategy(new MergeSortStrategy<>());
+                        System.out.println("Выберите алгоритм для сортировки чёт/нечёт:");
+                        sorter.setStrategy(chooseStrategy());
                         sorter.sort(items, oddEvenOrdering);
                         items.forEach(System.out::println);
                     }
