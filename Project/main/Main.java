@@ -1,21 +1,29 @@
-package Project.main;
+package main;
 
-import Project.model.*;
-import Project.sorting.*;
-import Project.validation.*;
-import Project.parallel.*;
-import Project.io.*;
-import Project.test.*;
+import model.*;
+import sorting.*;
+import validation.*;
+import parallel.*;
+import test.*;
+import model.FileCreate;
+
 
 import java.nio.file.Path;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Scanner;
 import java.util.function.Function;
+import java.util.Random;
+import java.util.ArrayList;
 
+/**
+ * Главный класс приложения управления сущностями (Студенты, Автобусы, Пользователи).
+ * Обеспечивает циклическое меню, выбор стратегий заполнения и выполнение кастомных сортировок.
+ */
 public class Main {
 
     private static final Scanner SCANNER = new Scanner(System.in);
+    private static final Random RANDOM = new Random();
 
     public static void main(String[] args) {
         while (true) {
@@ -26,42 +34,116 @@ public class Main {
                     3 - Пользователи
                     0 - выход""");
             System.out.print("Ваш выбор: ");
+
             switch (SCANNER.nextLine().trim()) {
                 case "1" -> runEntityMenu(
-                        new RandomFiller<>(),
-                        new ManualFiller<>(SCANNER, EntityInput::readStudent),
-                        new FileFiller<>(Path.of("input.txt"), EntityParser::parseStudent),
+                        new RandomFiller<>(() -> Student.builder()
+                                .groupNumber(RANDOM.nextInt(900) + 100)
+                                .averageGrade(2.0 + RANDOM.nextDouble() * 3.0)
+                                .gradeBookNumber(100000L + RANDOM.nextInt(900000))
+                                .build()),
+                        new CoutFiller<>(() -> {
+                            System.out.print("  Введите номер группы (целое число): ");
+                            int group = readInt();
+                            System.out.print("  Введите средний балл (дробь): ");
+                            double grade = readDouble();
+                            System.out.print("  Введите зачетку (целое число): ");
+                            long id = readLong();
+                            return Student.builder().groupNumber(group).averageGrade(grade).gradeBookNumber(id).build();
+                        }),
+                        new FileCreates<>(Path.of("input.txt"), (line) -> {
+                            String[] parts = line.split(",");
+                            return Student.builder()
+                                    .groupNumber(Integer.parseInt(parts[0].trim()))
+                                    .averageGrade(Double.parseDouble(parts[1].trim()))
+                                    .gradeBookNumber(Long.parseLong(parts[2].trim()))
+                                    .build();
+                        }),
                         List.of(
-                                new NamedComparator<>("группа", StudentComparators.BY_GROUP),
-                                new NamedComparator<>("средний балл", StudentComparators.BY_GRADE),
-                                new NamedComparator<>("зачётка", StudentComparators.BY_BOOK)),
-                        OddEvenOrdering.byAverageGrade(),
+                                new NamedComparator<>("группа", (s1, s2) -> Integer.compare(s1.getGroupNumber(), s2.getGroupNumber())),
+                                new NamedComparator<>("средний балл", (s1, s2) -> Double.compare(s1.getAverageGrade(), s2.getAverageGrade())),
+                                new NamedComparator<>("зачётка", (s1, s2) -> Long.compare(s1.getGradeBookNumber(), s2.getGradeBookNumber()))
+                        ),
+                        (s1, s2) -> {
+                            long g1 = s1.getGroupNumber();
+                            long g2 = s2.getGroupNumber();
+                            if (g1 % 2 == 0 && g2 % 2 == 0) return Integer.compare(s1.getGroupNumber(), s2.getGroupNumber());
+                            return 0;
+                        },
                         "Введите номер группы для подсчёта кол-ва студентов: ",
                         Student::getGroupNumber,
-                        Integer::parseInt);
+                        Integer::parseInt
+                );
                 case "2" -> runEntityMenu(
-                        new RandomFiller<>(),
-                        new ManualFiller<>(SCANNER, EntityInput::readBus),
-                        new FileFiller<>(Path.of("input_bus.txt"), EntityParser::parseBus),
-                        List.of(
-                                new NamedComparator<>("номер", BusComparators.BY_NUMBER),
-                                new NamedComparator<>("модель", BusComparators.BY_MODEL),
-                                new NamedComparator<>("пробег", BusComparators.BY_MILEAGE)),
+                        new RandomFiller<>(() -> Bus.builder()
+                                .number(String.valueOf(RANDOM.nextInt(900) + 100))
+                                .model("Volvo_" + RANDOM.nextInt(10))
+                                .mileage(RANDOM.nextInt(500000))
+                                .build()),
+                        new CoutFiller<>(() -> {
+                            System.out.print("  Введите номер автобуса: ");
+                            int num = readInt();
+                            System.out.print("  Введите модель: ");
+                            String model = SCANNER.nextLine().trim();
+                            System.out.print("  Введите пробег: ");
+                            int mileage = readInt();
+                            return Bus.builder().number(String.valueOf(num)).model(model).mileage(mileage).build();
+                        }),
+                        new FileCreates<>(Path.of("buses.txt"), (line) -> {
+                            String[] parts = line.split(",");
+                            return Bus.builder()
+                                    .number(String.valueOf((parts[0].trim())))
+                                    .model(parts[1].trim())
+                                    .mileage(Integer.parseInt(parts[2].trim()))
+                                    .build();
+                        }),
+                         List.of(
+                                // Сравниваем номера как строки через .compareTo()
+                                new NamedComparator<>("номер", (b1, b2) -> b1.getNumber().compareTo(b2.getNumber())),
+                                // Сравниваем модели как строки
+                                new NamedComparator<>("модель", (b1, b2) -> b1.getModel().compareTo(b2.getModel())),
+                                // Сравниваем пробег как строки через .compareTo()
+                                new NamedComparator<>("пробег", (b1, b2) -> Double.compare(b1.getMileage(), b2.getMileage()))
+
+                            ),
+
                         null,
                         "Введите модель автобуса для подсчёта кол-ва: ",
                         Bus::getModel,
-                        String::trim);
+                        String::trim
+                );
                 case "3" -> runEntityMenu(
-                        new RandomFiller<>(),
-                        new ManualFiller<>(SCANNER, EntityInput::readUser),
-                        new FileFiller<>(Path.of("input_user.txt"), EntityParser::parseUser),
+                        new RandomFiller<>(() -> User.builder()
+                                .name("User_" + RANDOM.nextInt(1000))
+                                .password("pass" + RANDOM.nextInt(9999))
+                                .email("user" + RANDOM.nextInt(100) + "@mail.ru")
+                                .build()),
+                        new CoutFiller<>(() -> {
+                            System.out.print("  Введите имя пользователя: ");
+                            String name = SCANNER.nextLine().trim();
+                            System.out.print("  Введите пароль: ");
+                            String pass = SCANNER.nextLine().trim();
+                            System.out.print("  Введите почту: ");
+                            String email = SCANNER.nextLine().trim();
+                            return User.builder().name(name).password(pass).email(email).build();
+                        }),
+                        new FileCreates<>(Path.of("users.txt"), (line) -> {
+                            String[] parts = line.split(",");
+                            return User.builder()
+                                    .name(parts[0].trim())
+                                    .password(parts[1].trim())
+                                    .email(parts[2].trim())
+                                    .build();
+                        }),
                         List.of(
-                                new NamedComparator<>("имя", UserComparators.BY_NAME),
-                                new NamedComparator<>("почта", UserComparators.BY_EMAIL)),
+                                new NamedComparator<>("имя", (u1, u2) -> u1.getName().compareTo(u2.getName())),
+                                new NamedComparator<>("почта", (u1, u2) -> u1.getEmail().compareTo(u2.getEmail()))
+                        ),
                         null,
                         "Введите почту для подсчёта кол-ва пользователей: ",
                         User::getEmail,
-                        String::trim);
+                        String::trim
+                );
                 case "0" -> {
                     System.out.println("Работа завершена.");
                     return;
@@ -74,11 +156,11 @@ public class Main {
     // ---------- Общий цикл меню для любого класса ----------
 
     private static <T, V> void runEntityMenu(
-            DataFiller<T> randomFiller,
-            DataFiller<T> manualFiller,
-            DataFiller<T> fileFiller,
+            DataFillers<T> randomFiller,
+            DataFillers<T> manualFiller,
+            DataFillers<T> fileFiller,
             List<NamedComparator<T>> comparators,
-            Comparator<T> oddEvenOrdering,   // null — если доп-1 не применимо
+            Comparator<T> oddEvenOrdering,   
             String countPrompt,
             Function<T, V> getField,
             Function<String, V> valueParser) {
@@ -133,19 +215,27 @@ public class Main {
         }
     }
 
-    private static <T> List<T> fillFromMenu(DataFiller<T> randomFiller,
-                                            DataFiller<T> manualFiller,
-                                            DataFiller<T> fileFiller) {
+    private static <T> CustomArrayList<T> fillFromMenu(DataFillers<T> randomFiller,
+                                            DataFillers<T> manualFiller,
+                                            DataFillers<T> fileFiller) {
         try {
             System.out.print("Длина массива: ");
             int size = DataValidator.validatePositiveInt(SCANNER.nextLine(), "Длина массива");
             System.out.println("1 - случайно, 2 - вручную, 3 - из файла");
-            DataFiller<T> filler = switch (SCANNER.nextLine().trim()) {
+            DataFillers<T> filler = switch (SCANNER.nextLine().trim()) {
                 case "1" -> randomFiller;
                 case "2" -> manualFiller;
                 default -> fileFiller;
             };
-            return filler.fill(size);
+            
+            List<T> rawList = filler.fill(size);
+            CustomArrayList<T> customList = new CustomArrayList<>();
+            if (rawList != null) {
+                for (T item : rawList) {
+                    customList.add(item);
+                }
+            }
+            return customList;
         } catch (ValidationException e) {
             System.out.println("Ошибка: " + e.getMessage());
             return new CustomArrayList<>();
@@ -178,7 +268,36 @@ public class Main {
         return options.get(index).comparator();
     }
 
-    // Именованный компаратор: название пункта меню + сам компаратор
     public record NamedComparator<T>(String name, Comparator<T> comparator) {
+    }
+
+    private static int readInt() {
+        while (!SCANNER.hasNextInt()) {
+            System.out.print("  Ошибка! Введите целое число: ");
+            SCANNER.next();
+        }
+        int val = SCANNER.nextInt();
+        SCANNER.nextLine();
+        return val;
+    }
+
+    private static double readDouble() {
+        while (!SCANNER.hasNextDouble()) {
+            System.out.print("  Ошибка! Введите дробное число (через запятую/точку): ");
+            SCANNER.next();
+        }
+        double val = SCANNER.nextDouble();
+        SCANNER.nextLine();
+        return val;
+    }
+
+    private static long readLong() {
+        while (!SCANNER.hasNextLong()) {
+            System.out.print("  Ошибка! Введите целое число: ");
+            SCANNER.next();
+        }
+        long val = SCANNER.nextLong();
+        SCANNER.nextLine();
+        return val;
     }
 }
