@@ -1,0 +1,10 @@
+Ivan,pass1234,ivan@mail.ru
+Maria,secret42,maria@mail.ru
+Alex,qwerty9,alex@mail.ru
+Olga,promo777,olga@mail.ru
+Dmitry,p@ssw0rd,dmitry@mail.ru
+Nina,hello555,nina@mail.ru
+Sergey,abc123,sergey@mail.ru
+Katya,mypass99,katya@mail.ru
+Pavel,pass2024,pavel@mail.ru
+Lena,passtest,lena@mail.ru
