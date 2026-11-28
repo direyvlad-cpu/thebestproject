@@ -1,6 +1,7 @@
-package model;
+package Project.model;
 
 import java.util.Objects;
+import Project.validation.*;
 
 public class Bus implements Comparable<Bus> {
     private final String number;

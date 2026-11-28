@@ -1,4 +1,4 @@
-package main.sorting;
+package Project.sorting;
 
 import java.util.Comparator;
 import java.util.function.ToLongFunction;

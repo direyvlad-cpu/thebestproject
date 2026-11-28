@@ -1,4 +1,4 @@
-package main.sorting;
+package Project.sorting;
 
 import java.util.Comparator;
 import java.util.List;
@@ -10,7 +10,9 @@ public class InsertionSortStrategy<T> implements SortStrategy<T> {
         if (list == null || list.size() <= 1) return;
 
         if (comparator instanceof OddEvenComparator<?> oddEven) {
-            OddEvenSorterHelper.sort(list, oddEven, this::performStandardSort);
+            @SuppressWarnings("unchecked")
+            OddEvenComparator<T> typed = (OddEvenComparator<T>) oddEven;
+            OddEvenSorterHelper.sort(list, typed, this::performStandardSort);
             return;
         }
 

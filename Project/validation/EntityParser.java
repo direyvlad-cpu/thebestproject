@@ -1,4 +1,8 @@
-package model;
+package Project.validation;
+
+import Project.model.Bus;
+import Project.model.Student;
+import Project.model.User;
 
 /** Преобразует одну строку файла в объект предметной области. Формат полей разделён символом ';'. */
 public final class EntityParser {

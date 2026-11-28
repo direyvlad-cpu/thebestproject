@@ -1,8 +1,8 @@
-package main;
+package Project.validation;
 
-import model.DataFiller;
-import model.DataValidator;
-import model.ValidationException;
+import Project.model.DataFillers;
+import Project.validation.DataValidator;
+import Project.validation.ValidationException;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -10,7 +10,7 @@ import java.util.Scanner;
 import java.util.function.Function;
 
 /** Универсальное заполнение коллекции с консоли. Ошибочный ввод повторяется. */
-public class ManualFiller<T> implements DataFiller<T> {
+public class ManualFiller<T> implements DataFillers<T> {
     private final Scanner scanner;
     private final Function<Scanner, T> entityReader;
 

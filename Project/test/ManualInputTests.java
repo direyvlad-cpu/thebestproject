@@ -1,7 +1,8 @@
-package tests;
+package Project.test;
 
-import model.EntityInput;
-import model.Student;
+import Project.validation.EntityInput;
+import Project.model.Student;
+import Project.validation.ValidationException;
 
 import java.util.Scanner;
 
@@ -17,7 +18,7 @@ public class ManualInputTests {
         });
         TestSupport.test("Завершение ввода до заполнения полей обрабатывается", () -> {
             Scanner scanner = new Scanner("101\n");
-            TestSupport.assertThrows(model.ValidationException.class,
+            TestSupport.assertThrows(ValidationException.class,
                     () -> EntityInput.readStudent(scanner), "Недостаточно введённых данных");
         });
         TestSupport.printSummary();

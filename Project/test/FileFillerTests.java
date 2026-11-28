@@ -1,9 +1,9 @@
-package tests;
+package Project.test;
 
-import model.EntityParser;
-import model.FileFiller;
-import model.Student;
-import model.ValidationException;
+import Project.validation.EntityParser;
+import Project.validation.FileFiller;
+import Project.model.Student;
+import Project.validation.ValidationException;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;

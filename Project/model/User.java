@@ -1,4 +1,6 @@
-package model;
+package Project.model;
+
+import Project.validation.DataValidator;
 
 import java.util.Objects;
 

@@ -1,4 +1,6 @@
-package model;
+package Project.validation;
+
+import Project.model.DataFillers;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -10,7 +12,7 @@ import java.util.List;
 import java.util.function.Function;
 
 /** Читает заданное количество проверенных записей из UTF-8-файла. */
-public class FileFiller<T> implements DataFiller<T> {
+public class FileFiller<T> implements DataFillers<T> {
     private final Path path;
     private final Function<String, T> parser;
 

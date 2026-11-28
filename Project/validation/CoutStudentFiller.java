@@ -1,11 +1,14 @@
-package model;
+package Project.validation;
+
+import Project.model.DataFillers;
+import Project.model.Student;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
 
 /** Ручное заполнение студентов. Старый дублирующий интерфейс DataFiller удалён. */
-class CoutCreate implements DataFiller<Student> {
+class CoutCreate implements DataFillers<Student> {
     @Override
     public List<Student> fill(int size) {
         DataValidator.validatePositiveInt(size, "Размер коллекции");

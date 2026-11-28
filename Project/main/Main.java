@@ -1,11 +1,10 @@
-package main;
+package Project.main;
 
-import model.*;
-import sorting.*;
-import validation.*;
-import parallel.*;
-import test.*;
-import model.FileCreate;
+import Project.model.*;
+import Project.sorting.*;
+import Project.parallel.*;
+import Project.test.*;
+import Project.validation.*;
 
 
 import java.nio.file.Path;
@@ -204,7 +203,7 @@ public class Main {
                         V value = valueParser.apply(rawInput);
                         long count = counter.countByField(items, getField, value);
                         System.out.println("Найдено вхождений: " + count);
-                    } catch (ValidationException | IllegalStateException | IllegalArgumentException e) {
+                    } catch (ValidationException | IllegalStateException e) {
                         System.out.println("Ошибка: " + e.getMessage());
                     }
                 }

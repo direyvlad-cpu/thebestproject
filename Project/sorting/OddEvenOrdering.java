@@ -1,6 +1,6 @@
-package main.sorting;
+package Project.sorting;
 
-import model.Student;
+import Project.model.Student;
 import java.util.Comparator;
 import java.util.function.ToLongFunction;
 

@@ -1,4 +1,4 @@
-package parallel;
+package Project.parallel;
 
 import java.util.ArrayList;
 import java.util.List;

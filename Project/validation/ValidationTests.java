@@ -1,10 +1,11 @@
-package tests;
+package Project.validation;
 
-import model.Bus;
-import model.DataValidator;
-import model.Student;
-import model.User;
-import model.ValidationException;
+import Project.test.TestSupport;
+import Project.model.Bus;
+import Project.validation.DataValidator;
+import Project.model.Student;
+import Project.model.User;
+import Project.validation.ValidationException;
 
 public class ValidationTests {
     public static void main(String[] args) {

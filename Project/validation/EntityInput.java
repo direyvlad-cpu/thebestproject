@@ -1,4 +1,8 @@
-package model;
+package Project.validation;
+
+import Project.model.Bus;
+import Project.model.Student;
+import Project.model.User;
 
 import java.util.Scanner;
 import java.util.function.Function;

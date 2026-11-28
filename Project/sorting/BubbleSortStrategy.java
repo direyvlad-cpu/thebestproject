@@ -1,4 +1,4 @@
-package main.sorting;
+package Project.sorting;
 
 import java.util.Comparator;
 import java.util.List;
@@ -26,9 +26,9 @@ public class BubbleSortStrategy<T> implements SortStrategy<T> {
     }
 
     private void sortOddEven(List<T> list, OddEvenComparator<?> oddEven) {
-        // Логика для задания 6 (сортировка только чётных)
-        // Мы будем реализовывать её через базовый метод, чтобы не дублировать код
-        OddEvenSorterHelper.sort(list, oddEven, this::performStandardSort);
+        @SuppressWarnings("unchecked")
+        OddEvenComparator<T> typed = (OddEvenComparator<T>) oddEven;
+        OddEvenSorterHelper.sort(list, typed, this::performStandardSort);
     }
 
     // Вспомогательный метод для обмена элементов (Core, перегрузка/массивы)
