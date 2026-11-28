@@ -7,6 +7,7 @@ import Project.test.*;
 import Project.validation.*;
 
 
+
 import java.nio.file.Path;
 import java.util.Comparator;
 import java.util.List;
@@ -25,6 +26,7 @@ public class Main {
     private static final Random RANDOM = new Random();
 
     public static void main(String[] args) {
+
         while (true) {
             System.out.println("""
                     Выберите класс для работы:
@@ -50,7 +52,7 @@ public class Main {
                             long id = readLong();
                             return Student.builder().groupNumber(group).averageGrade(grade).gradeBookNumber(id).build();
                         }),
-                        new FileCreates<>(Path.of("input.txt"), (line) -> {
+                        new FileCreates<>(Path.of("students.txt"), (line) -> {
                             String[] parts = line.split(",");
                             return Student.builder()
                                     .groupNumber(Integer.parseInt(parts[0].trim()))
@@ -170,6 +172,7 @@ public class Main {
         ParallelCounter<T> counter = new ParallelCounter<>();
 
         while (true) {
+            printItems(items, 10); // выводим рабочий массив перед меню, максимум 10 элементов
             System.out.println("""
                     1 - заполнить массив
                     2 - отсортировать
@@ -213,6 +216,22 @@ public class Main {
                 default -> System.out.println("Нет такой команды, попробуйте снова.");
             }
         }
+    }
+
+    private static <T> void printItems(CustomArrayList<T> items, int maxSize) {
+        if (items.isEmpty()) {
+            System.out.println("\n  [Массив пуст — заполните его через пункт 1]");
+        } else {
+            System.out.println("\n  --- Текущий массив (" + items.size() + " эл.): ---");
+            int shown = Math.min(items.size(), maxSize);
+            for (int i = 0; i < shown; i++) {
+                System.out.println("  " + (i + 1) + ". " + items.get(i));
+            }
+            if (items.size() > maxSize) {
+                System.out.println("  ... и ещё " + (items.size() - maxSize) + " эл. (показаны первые " + maxSize + ")");
+            }
+        }
+        System.out.println();
     }
 
     private static <T> CustomArrayList<T> fillFromMenu(DataFillers<T> randomFiller,
